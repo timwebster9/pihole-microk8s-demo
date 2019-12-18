@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: unbound
+  name: unbound-demo
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -9,7 +9,7 @@ metadata:
   labels:
     app: unbound
   name: unbound
-  namespace: unbound
+  namespace: unbound-demo
 spec:
   replicas: 2
   selector:
@@ -38,15 +38,35 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: unbound
-  namespace: unbound
+  name: unbound-udp
+  namespace: unbound-demo
+  annotations:
+    metallb.universe.tf/allow-shared-ip: dns
 spec:
   selector:
     app: unbound
   ports:
   - protocol: UDP
-    port: 8553
+    port: 53
     name: dnsudp
     targetPort: 53
   type: LoadBalancer
-  loadBalancerIP: 192.168.1.142
+  loadBalancerIP: 192.168.1.162
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: unbound-tcp
+  namespace: unbound-demo
+  annotations:
+    metallb.universe.tf/allow-shared-ip: dns
+spec:
+  selector:
+    app: unbound
+  ports:
+  - protocol: TCP
+    port: 53
+    name: dnstcp
+    targetPort: 53
+  type: LoadBalancer
+  loadBalancerIP: 192.168.1.162

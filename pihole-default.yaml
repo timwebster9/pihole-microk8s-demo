@@ -211,8 +211,10 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: pihole-default-dnsudp
+  name: pihole-udp
   namespace: pihole-default
+  annotations:
+    metallb.universe.tf/allow-shared-ip: dns
 spec:
   selector:
     app: pihole-default
@@ -227,15 +229,21 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: pihole-default-web
+  name: pihole-tcp
   namespace: pihole-default
+  annotations:
+    metallb.universe.tf/allow-shared-ip: dns
 spec:
   selector:
     app: pihole-default
   ports:
   - protocol: TCP
+    port: 53
+    name: dnstcp
+    targetPort: 53
+  - protocol: TCP
     port: 80
     name: web
     targetPort: 80
   type: LoadBalancer
-  loadBalancerIP: 192.168.1.150
+  loadBalancerIP: 192.168.1.140
