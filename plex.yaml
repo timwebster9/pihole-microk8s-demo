@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: plex
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: plex
+  name: plex
+  namespace: plex
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: plex
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: plex
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: triton
+      containers:
+      - env:
+        - name: PLEX_CLAIM
+          value: claim-HmztMpRyG8H4qHYmMU8A
+        - name: VERSION
+          value: docker
+        image: linuxserver/plex:1.18.2.2058-e67a4e892-ls71
+        imagePullPolicy: IfNotPresent
+        name: plex
+        ports:
+        - containerPort: 32400
+          name: pms-web
+          protocol: TCP
+        - containerPort: 32469
+          name: dlna-tcp
+          protocol: TCP
+        - containerPort: 1900
+          name: dlna-udp
+          protocol: UDP
+        - containerPort: 32410
+          name: gdm-32410
+          protocol: UDP
+        - containerPort: 32412
+          name: gdm-32412
+          protocol: UDP
+        - containerPort: 32413
+          name: gdm-32413
+          protocol: UDP
+        - containerPort: 32414
+          name: gdm-32414
+          protocol: UDP
+        resources: {}
+        stdin: true
+        tty: true
+        volumeMounts:
+        - mountPath: /data
+          name: plex-media
+        - mountPath: /config
+          name: plex-config
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - hostPath:
+          path: /mnt/storage1/plex/config
+          type: ""
+        name: plex-config
+      - hostPath:
+          path: /mnt/storage1/plex/media
+          type: ""
+        name: plex-media
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: plex-udp
+  namespace: plex
+  annotations:
+    metallb.universe.tf/allow-shared-ip: plex
+spec:
+  selector:
+    app: plex
+  ports:
+  - port: 1900
+    targetPort: 1900
+    name: dlna-udp
+    protocol: UDP
+  - port: 32410
+    targetPort: 32410
+    name: gdm-32410
+    protocol: UDP
+  - port: 32412
+    targetPort: 32412
+    name: gdm-32412
+    protocol: UDP
+  - port: 32413
+    targetPort: 32413
+    name: gdm-32413
+    protocol: UDP
+  - port: 32414
+    targetPort: 32414
+    name: gdm-32414
+    protocol: UDP
+  type: LoadBalancer
+  loadBalancerIP: 192.168.1.143
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: plex-tcp
+  namespace: plex
+  annotations:
+    metallb.universe.tf/allow-shared-ip: plex
+spec:
+  selector:
+    app: plex
+  ports:
+  - port: 32400
+    targetPort: 32400
+    name: pms-web
+    protocol: TCP
+  - port: 32469
+    targetPort: 32469
+    name: dlna-tcp
+    protocol: TCP
+  type: LoadBalancer
+  loadBalancerIP: 192.168.1.143
